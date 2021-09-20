@@ -32,6 +32,7 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 #include "libuvc_camera/camera_driver.h"
+#include "libuvc_camera/decode_gst.h"
 
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
@@ -330,6 +331,8 @@ enum uvc_frame_format CameraDriver::GetVideoMode(std::string vmode){
     return UVC_COLOR_FORMAT_GRAY8;
   } else if (vmode == "gray16") {
     return UVC_COLOR_FORMAT_GRAY16;
+  } else if (vmode == "h264") {
+    return UVC_FRAME_FORMAT_H264;
   } else {
     ROS_ERROR_STREAM("Invalid Video Mode: " << vmode);
     ROS_WARN_STREAM("Continue using video mode: uncompressed");
@@ -441,7 +444,17 @@ void CameraDriver::OpenCamera(UVCCameraConfig &new_config) {
     return;
   }
 
-  uvc_error_t stream_err = uvc_start_streaming(devh_, &ctrl, &CameraDriver::ImageCallbackAdapter, this, 0);
+  uvc_error_t stream_err;
+
+  if (new_config.video_mode == "h264") {
+    decoder = decode_gst_init(&CameraDriver::ImageCallbackAdapter, this, NULL, 
+			      new_config.width, new_config.height);
+    if (decoder != NULL)
+      stream_err = uvc_start_streaming(devh_, &ctrl, decoder_cb, decoder, 0);
+    else
+      stream_err = UVC_ERROR_OTHER;
+  } else
+    stream_err = uvc_start_streaming(devh_, &ctrl, &CameraDriver::ImageCallbackAdapter, this, 0);
 
   if (stream_err != UVC_SUCCESS) {
     uvc_perror(stream_err, "uvc_start_streaming");
@@ -461,6 +474,8 @@ void CameraDriver::OpenCamera(UVCCameraConfig &new_config) {
 
 void CameraDriver::CloseCamera() {
   assert(state_ == kRunning);
+
+  decode_gst_terminate(decoder);
 
   uvc_close(devh_);
   devh_ = NULL;

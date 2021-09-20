@@ -11,6 +11,8 @@
 
 #include <libuvc_camera/UVCCameraConfig.h>
 
+#include "decode_gst.h"
+
 namespace libuvc_camera {
 
 class CameraDriver {
@@ -72,6 +74,7 @@ private:
   UVCCameraConfig config_;
   bool config_changed_;
 
+  decode_gst_t *decoder;
   camera_info_manager::CameraInfoManager cinfo_manager_;
 };
 

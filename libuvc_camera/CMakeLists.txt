@@ -9,6 +9,11 @@ generate_dynamic_reconfigure_options(cfg/UVCCamera.cfg)
 find_package(libuvc REQUIRED)
 message(STATUS "libuvc ${libuvc_VERSION_MAJOR}.${libuvc_VERSION_MINOR}.${libuvc_VERSION_PATCH}")
 
+find_package(PkgConfig)
+pkg_search_module(GLIB REQUIRED glib-2.0)
+pkg_check_modules(GSTREAMER REQUIRED gstreamer-1.0)
+pkg_check_modules(GST_APP REQUIRED gstreamer-app-1.0)
+
 catkin_package(
   CATKIN_DEPENDS
     roscpp
@@ -23,19 +28,20 @@ catkin_package(
 add_definitions(-Dlibuvc_VERSION_MAJOR=${libuvc_VERSION_MAJOR})
 add_definitions(-Dlibuvc_VERSION_MINOR=${libuvc_VERSION_MINOR})
 add_definitions(-Dlibuvc_VERSION_PATCH=${libuvc_VERSION_PATCH})
-include_directories(include ${libuvc_INCLUDE_DIRS} ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
+include_directories(include ${libuvc_INCLUDE_DIRS} ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS} ${GST_APP_INCLUDE_DIRS})
 link_directories(${catkin_LINK_DIRS})
 
 find_package(Boost REQUIRED COMPONENTS thread)
 include_directories(${Boost_INCLUDE_DIRS})
 
-add_executable(camera_node src/main.cpp src/camera_driver.cpp)
-target_link_libraries(camera_node ${libuvc_LIBRARIES} ${Boost_LIBRARIES} ${catkin_LIBRARIES})
+add_executable(camera_node src/main.cpp src/camera_driver.cpp src/decode_gst.c)
+target_link_libraries(camera_node ${libuvc_LIBRARIES} ${Boost_LIBRARIES} ${catkin_LIBRARIES} ${GST_APP_LIBRARIES})
 add_dependencies(camera_node ${PROJECT_NAME}_gencfg)
 
-add_library(libuvc_camera_nodelet src/nodelet.cpp src/camera_driver.cpp)
+add_library(libuvc_camera_nodelet src/nodelet.cpp src/camera_driver.cpp src/decode_gst.c)
 add_dependencies(libuvc_camera_nodelet ${libuvc_camera_EXPORTED_TARGETS})
-target_link_libraries(libuvc_camera_nodelet ${libuvc_LIBRARIES} ${Boost_LIBRARIES} ${catkin_LIBRARIES})
+target_link_libraries(libuvc_camera_nodelet ${libuvc_LIBRARIES} ${Boost_LIBRARIES} ${catkin_LIBRARIES}
+  ${GST_APP_LIBRARIES})
 add_dependencies(libuvc_camera_nodelet ${PROJECT_NAME}_gencfg)
 
 install(TARGETS camera_node libuvc_camera_nodelet
