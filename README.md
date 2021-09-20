@@ -1,4 +1,4 @@
-H.supportROS Driver for USB Video Class Cameras
+ROS Driver for USB Video Class Cameras
 ======================================
 
 `libuvc_camera` is a ROS driver that supports webcams and other UVC-standards-compliant video devices.
