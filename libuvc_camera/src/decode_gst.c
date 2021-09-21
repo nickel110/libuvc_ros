@@ -43,8 +43,16 @@
 
 #include "libuvc_camera/decode_gst.h"
 
+#if defined(DECODER_JETSON)
+#if defined(USE_OPENGL)
+#define DECODE_PIPE "nvv4l2decoder ! nvvidconv ! queue ! glupload ! glcolorconvert ! video/x-raw(memory:GLMemory),format=RGB ! gldownload"
+#else
+#define DECODE_PIPE "nvv4l2decoder ! nvvidconv ! video/x-raw,format=RGBA ! queue ! videoconvert n-threads=2 !  video/x-raw,format=RGB ! queue "
+#endif
+#else
 #define DECODE_PIPE "decodebin ! glupload ! glcolorconvert ! video/x-raw(memory:GLMemory),format=RGB ! gldownload"
-#define PIPE_FORMAT "appsrc name=src ! queue ! h264parse ! %s ! appsink name=sink"
+#endif
+#define PIPE_FORMAT "appsrc name=src ! queue ! h264parse ! %s ! queue ! appsink drop=true name=sink"
 
 struct decode_gst {
     GstElement *pipeline;

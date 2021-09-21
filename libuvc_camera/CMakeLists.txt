@@ -14,6 +14,17 @@ pkg_search_module(GLIB REQUIRED glib-2.0)
 pkg_check_modules(GSTREAMER REQUIRED gstreamer-1.0)
 pkg_check_modules(GST_APP REQUIRED gstreamer-app-1.0)
 
+if (EXISTS "/etc/nv_tegra_release")
+  message(STATUS "Build for Jetson Platform")
+  add_definitions(-DDECODER_JETSON)
+endif()
+
+option(USE_OPENGL "Offload color conversion to OpenGL" ON)
+if (USE_OPENGL)
+  message(STATUS "Color conversion offload to OpenGL")
+  add_definitions(-DUSE_OPENGL)
+endif()
+
 catkin_package(
   CATKIN_DEPENDS
     roscpp

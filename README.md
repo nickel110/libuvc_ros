@@ -12,9 +12,10 @@ Documentation is available on the ROS wiki: [libuvc_camera](http://wiki.ros.org/
 H.264 support(as video_mode:=h264) via gstreamer.<br>
 Need gstreamer pulgin/developemnt pacakges to build and run.
 
-* If you installed libuvc from source code, check [here](https://github.com/nickel110/libuvc/commit/8b58a694e4cdedd6dc09031398e927c3092f1b70) for fix cmake module file.
+* If you installed libuvc from source, check [here](https://github.com/nickel110/libuvc/commit/8b58a694e4cdedd6dc09031398e927c3092f1b70) for fix cmake module file.
+* Tested on NVIDIA Jetson and Intel with iGPU platforms.
 
-### sample
+### Example
 Capture 2K image from THETA V
 ```
 $ rosrun  libuvc_camera camera_node  _vendor:=0x05ca _product:=0x2712 _width:=1920 _height:=960 _frame_rate:=29.97 _video_mode:=h264
