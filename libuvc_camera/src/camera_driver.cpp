@@ -55,6 +55,7 @@ CameraDriver::CameraDriver(ros::NodeHandle nh, ros::NodeHandle priv_nh)
     config_changed_(false),
     cinfo_manager_(nh) {
   cam_pub_ = it_.advertiseCamera("image_raw", 1, false);
+  decoder = NULL;
 }
 
 CameraDriver::~CameraDriver() {
@@ -85,6 +86,11 @@ bool CameraDriver::Start() {
 }
 
 void CameraDriver::Stop() {
+
+  uvc_stop_streaming(devh_);
+  if (decoder)
+    decode_gst_terminate(decoder);
+
   boost::recursive_mutex::scoped_lock lock(mutex_);
 
   assert(state_ != kInitial);
@@ -474,8 +480,6 @@ void CameraDriver::OpenCamera(UVCCameraConfig &new_config) {
 
 void CameraDriver::CloseCamera() {
   assert(state_ == kRunning);
-
-  decode_gst_terminate(decoder);
 
   uvc_close(devh_);
   devh_ = NULL;
