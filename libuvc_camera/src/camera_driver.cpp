@@ -230,6 +230,11 @@ void CameraDriver::ImageCallback(uvc_frame_t *frame) {
     image->encoding = "rgb8";
     memcpy(&(image->data[0]), rgb_frame_->data, rgb_frame_->data_bytes);
 #endif
+  } else if (frame->frame_format == FRAME_FORMAT_RGBA) {
+    image->encoding = "rgba8";
+    image->step = image->width * 4;
+    image->data.resize(image->step * image->height);
+    memcpy(&(image->data[0]), frame->data, frame->data_bytes);
   } else {
     uvc_error_t conv_ret = uvc_any2bgr(frame, rgb_frame_);
     if (conv_ret != UVC_SUCCESS) {

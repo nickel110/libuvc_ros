@@ -38,6 +38,7 @@
 #if defined(__cplusplus)
 extern "C" {
 #endif
+#define FRAME_FORMAT_RGBA (UVC_FRAME_FORMAT_COUNT + 1)
 
 struct decode_gst;
 typedef struct decode_gst decode_gst_t;

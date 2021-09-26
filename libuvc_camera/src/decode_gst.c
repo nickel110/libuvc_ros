@@ -46,15 +46,11 @@
 #include "libuvc_camera/decode_gst.h"
 
 #if defined(DECODER_JETSON)
-#if defined(USE_OPENGL)
-#define DECODE_PIPE "nvv4l2decoder ! nvvidconv ! queue ! glupload ! glcolorconvert ! video/x-raw(memory:GLMemory),format=RGB ! gldownload"
+#define DECODE_PIPE "nvv4l2decoder ! nvvidconv ! video/x-raw,format=RGBA"
 #else
-#define DECODE_PIPE "nvv4l2decoder ! nvvidconv ! video/x-raw,format=RGBA ! queue ! videoconvert n-threads=2 !  video/x-raw,format=RGB ! queue "
+#define DECODE_PIPE "decodebin ! autovideoconvert ! video/x-raw,format=RGBA"
 #endif
-#else
-#define DECODE_PIPE "decodebin ! glupload ! glcolorconvert ! video/x-raw(memory:GLMemory),format=RGB ! gldownload"
-#endif
-#define PIPE_FORMAT "appsrc name=src ! queue ! h264parse ! %s ! queue ! appsink drop=true name=sink"
+#define PIPE_FORMAT "appsrc name=src ! queue ! h264parse ! %s ! queue ! appsink name=sink"
 
 enum msg_code {
     MSG_READY = 0,
@@ -241,8 +237,8 @@ decode_gst_init(void (*cb)(uvc_frame_t *, void *), void *arg, const char *decode
     memset(&(p->out_frame), sizeof(uvc_frame_t), 0);
     p->out_frame.width = width;
     p->out_frame.height = height;
-    p->out_frame.data_bytes = width * height * 3;
-    p->out_frame.frame_format = UVC_FRAME_FORMAT_RGB;
+    p->out_frame.data_bytes = width * height * 4;
+    p->out_frame.frame_format = FRAME_FORMAT_RGBA;
     p->fcount = 0;
 
     if (decoder == NULL)
