@@ -46,11 +46,12 @@
 #include "libuvc_camera/decode_gst.h"
 
 #if defined(DECODER_JETSON)
-#define DECODE_PIPE "nvv4l2decoder ! nvvidconv ! video/x-raw,format=RGBA"
+#define DECODE_PIPE "nvv4l2decoder ! nvvidconv"
 #else
-#define DECODE_PIPE "decodebin ! autovideoconvert ! video/x-raw,format=RGBA"
+#define DECODE_PIPE "decodebin ! autovideoconvert"
 #endif
-#define PIPE_FORMAT "appsrc name=src ! queue ! h264parse ! %s ! queue ! appsink name=sink"
+#define PIPE_FORMAT "appsrc name=src ! queue ! h264parse ! %s  ! video/x-raw,format=RGBA,width=%d,height=%d !" \
+    "queue ! appsink name=sink"
 
 enum msg_code {
     MSG_READY = 0,
@@ -221,7 +222,7 @@ decoder_loop(void *arg)
 
 decode_gst_t *
 decode_gst_init(void (*cb)(uvc_frame_t *, void *), void *arg, const char *decoder,
-		size_t width, size_t height)
+		size_t width, size_t height, size_t o_width, size_t o_height)
 {
     char *pipeline_desc;
     decode_gst_t *p;
@@ -235,17 +236,17 @@ decode_gst_init(void (*cb)(uvc_frame_t *, void *), void *arg, const char *decode
     p->cb_arg = arg;
 
     memset(&(p->out_frame), sizeof(uvc_frame_t), 0);
-    p->out_frame.width = width;
-    p->out_frame.height = height;
-    p->out_frame.data_bytes = width * height * 4;
+    p->out_frame.width = o_width == 0 ? width : o_width;
+    p->out_frame.height = o_height == 0 ? height : o_height;
+    p->out_frame.data_bytes = p->out_frame.width * p->out_frame.height * 4;
     p->out_frame.frame_format = FRAME_FORMAT_RGBA;
     p->fcount = 0;
 
     if (decoder == NULL)
 	decoder = DECODE_PIPE;
 
-    pipeline_desc = (char *)malloc(strlen(decoder) + strlen(PIPE_FORMAT));
-    sprintf(pipeline_desc, PIPE_FORMAT, decoder);
+    pipeline_desc = (char *)malloc(strlen(decoder) + strlen(PIPE_FORMAT) + 16);
+    sprintf(pipeline_desc, PIPE_FORMAT, decoder, p->out_frame.width, p->out_frame.height);
     p->pipeline_desc = pipeline_desc;
     pthread_create(&(p->decode_thr), NULL, decoder_loop, p);
 

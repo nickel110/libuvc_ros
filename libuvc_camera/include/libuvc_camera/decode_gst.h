@@ -43,7 +43,7 @@ extern "C" {
 struct decode_gst;
 typedef struct decode_gst decode_gst_t;
 
-decode_gst_t *decode_gst_init(void (*)(uvc_frame_t *, void *), void *, const char *, size_t, size_t);
+decode_gst_t *decode_gst_init(void (*)(uvc_frame_t *, void *), void *, const char *, size_t, size_t, size_t, size_t);
 void decode_gst_terminate(decode_gst_t *);
 void decoder_cb(uvc_frame_t *, void *);
    

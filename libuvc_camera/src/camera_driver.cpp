@@ -180,8 +180,8 @@ void CameraDriver::ImageCallback(uvc_frame_t *frame) {
   assert(rgb_frame_);
 
   sensor_msgs::Image::Ptr image(new sensor_msgs::Image());
-  image->width = config_.width;
-  image->height = config_.height;
+  image->width = frame->width;
+  image->height = frame->height;
   image->step = image->width * 3;
   image->data.resize(image->step * image->height);
 
@@ -459,7 +459,7 @@ void CameraDriver::OpenCamera(UVCCameraConfig &new_config) {
 
   if (new_config.video_mode == "h264") {
     decoder = decode_gst_init(&CameraDriver::ImageCallbackAdapter, this, NULL, 
-			      new_config.width, new_config.height);
+			      new_config.width, new_config.height, new_config.out_width, new_config.out_height);
     if (decoder != NULL)
       stream_err = uvc_start_streaming(devh_, &ctrl, decoder_cb, decoder, 0);
     else
