@@ -459,7 +459,8 @@ void CameraDriver::OpenCamera(UVCCameraConfig &new_config) {
 
   if (new_config.video_mode == "h264") {
     decoder = decode_gst_init(&CameraDriver::ImageCallbackAdapter, this, NULL, 
-			      new_config.width, new_config.height, new_config.out_width, new_config.out_height);
+			      new_config.width, new_config.height, new_config.out_width, new_config.out_height,
+			      new_config.frame_rate, new_config.frame_rate_reduction_ratio);
     if (decoder != NULL)
       stream_err = uvc_start_streaming(devh_, &ctrl, decoder_cb, decoder, 0);
     else

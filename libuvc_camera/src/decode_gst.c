@@ -32,6 +32,7 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 #include <assert.h>
+#include <math.h>
 #include <stdlib.h>
 #define __USE_GNU
 #include <pthread.h>
@@ -50,7 +51,8 @@
 #else
 #define DECODE_PIPE "decodebin ! autovideoconvert"
 #endif
-#define PIPE_FORMAT "appsrc name=src ! queue ! h264parse ! %s  ! video/x-raw,format=RGBA,width=%d,height=%d !" \
+#define VIDEORATE "! videorate drop-only=true max-rate=%d "
+#define PIPE_FORMAT "appsrc name=src ! queue ! h264parse ! %s ! video/x-raw,format=RGBA,width=%d,height=%d !" \
     "queue ! appsink name=sink"
 
 enum msg_code {
@@ -222,11 +224,12 @@ decoder_loop(void *arg)
 
 decode_gst_t *
 decode_gst_init(void (*cb)(uvc_frame_t *, void *), void *arg, const char *decoder,
-		size_t width, size_t height, size_t o_width, size_t o_height)
+		size_t width, size_t height, size_t o_width, size_t o_height, float frame_rate, size_t reduction_rate)
 {
     char *pipeline_desc;
     decode_gst_t *p;
-
+    char *decode_desc, *s_ptr;
+    int s_index;
 
     p = (decode_gst_t *)malloc(sizeof(decode_gst_t));
     if (p == NULL)
@@ -245,6 +248,19 @@ decode_gst_init(void (*cb)(uvc_frame_t *, void *), void *arg, const char *decode
     if (decoder == NULL)
 	decoder = DECODE_PIPE;
 
+    if (reduction_rate > 0) {
+	s_ptr = strchr(decoder, '!');
+	s_index = s_ptr ? s_ptr - decoder : strlen(decoder);
+
+	decode_desc = malloc(strlen(decoder) + strlen(VIDEORATE) + 8);
+	strncpy(decode_desc, decoder, s_index);
+	sprintf(decode_desc + s_index, VIDEORATE, (int)ceil(frame_rate / reduction_rate));
+	if (s_ptr)
+	    strcat(decode_desc, s_ptr);
+
+	decoder = decode_desc;
+    }
+
     pipeline_desc = (char *)malloc(strlen(decoder) + strlen(PIPE_FORMAT) + 16);
     sprintf(pipeline_desc, PIPE_FORMAT, decoder, p->out_frame.width, p->out_frame.height);
     p->pipeline_desc = pipeline_desc;
@@ -255,6 +271,9 @@ decode_gst_init(void (*cb)(uvc_frame_t *, void *), void *arg, const char *decode
     pthread_create(&(p->ptc.thr), NULL, publish_loop, p);
 
     pthread_setname_np(p->ptc.thr, "publish");
+
+    if (reduction_rate > 0)
+	free(decode_desc);
 
     return p;
 }
